@@ -3,30 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square Root Calculator</title>
+    <title>Base Camp Loyalty Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="number"] {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100px;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3e8e41;
+        }
+        #output {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* Preserves formatting */
+        }
+    </style>
 </head>
 <body>
-    <h1>Square Root Calculator</h1>
-    <p>Enter a number below to calculate its square root:</p>
-    
-    <!-- Input field and button -->
-    <input type="number" id="numberInput" placeholder="Enter a number">
-    <button onclick="calculateSquareRoot()">Calculate</button>
-    
-    <!-- Result display -->
-    <p id="result"></p>
 
-    <!-- JavaScript -->
+    <h1>Base Camp Loyalty Calculator</h1>
+
+    <div class="input-group">
+        <label for="levels">Current Base Camp Levels (separate by space):</label>
+        <input type="text" id="levels" placeholder="e.g., 1 2 3 4">
+    </div>
+
+    <div class="input-group">
+        <label for="specs">Loyalty from Specs (default 0):</label>
+        <input type="number" id="specs" value="0">
+    </div>
+
+    <div class="input-group">
+        <label for="target">Target Loyalty (Enter Target Level or Loyalty Increase):</label>
+        <select id="targetType">
+            <option value="level">Target Loyalty Level</option>
+            <option value="increase">Loyalty Increase Required</option>
+            <option value="next">Next Level</option>
+        </select>
+        <input type="number" id="targetValue" placeholder="Enter Value">
+    </div>
+    <button onclick="calculateLoyalty()">Calculate</button>
+
+    <div id="output"></div>
+
     <script>
-        function calculateSquareRoot() {
-            const number = document.getElementById('numberInput').value;
-            if (!isNaN(number) && number >= 0) {
-                const result = Math.sqrt(number);
-                document.getElementById('result').textContent = `The square root of ${number} is ${result}`;
-            } else {
-                document.getElementById('result').textContent = 'Please enter a valid non-negative number.';
+        function calculateLoyalty() {
+            const ac1 = [700, 2500, 4400, 8000, 14400, 25900, 46500, 83800, 150800, 271400, 325700, 390800, 469000, 562800, 675400, 810500, 972600, 1167000, 1401000];
+            const ac2 = [2200, 7400, 13300, 23900, 43100, 77600, 139600, 251300, 452300, 814100, 977100, 1173000, 1407000, 1688400, 2026000, 2431000, 2918000, 3501000, 4201000];
+            const ac3 = [4400, 14800, 26600, 47900, 86200, 155100, 279200, 502600, 904700, 1628500, 1954000, 2345000, 2814000, 3377000, 4052000, 4863000, 5835000, 7002000, 8403000];
+            const ac4 = [7400, 24600, 44300, 79800, 143600, 258500, 465400, 837700, 1508000, 2714000, 3257000, 3908000, 4660000, 5628000, 6753000, 8104000, 9725000, 11670000, 14004000];
+            const All_ACs = [ac1, ac2, ac3, ac4];
+            const loyalty = [0, 0, 0, 0, 2, 6, 10, 14, 18, 27, 33, 39, 48, 56, 64, 72, 80];
+
+            try {
+                const levelsInput = document.getElementById('levels').value;
+                const levels_current = levelsInput.split(" ").map(Number);
+
+                if (levels_current.length !== 4 || levels_current.some(isNaN)) {
+                    throw new Error("Invalid input for base camp levels. Please enter 4 numbers separated by spaces.");
+                }
+
+                const spec_loyalty = parseInt(document.getElementById('specs').value) || 0;
+
+                let current_loyalty_sum = levels_current.reduce((a, b) => a + b, 0) + spec_loyalty;
+                let current_loyalty_level = loyalty.findIndex(l => l > current_loyalty_sum) - 1;
+                if (current_loyalty_level === -2) current_loyalty_level = loyalty.length - 1; // Handle the case where the sum is already at or exceeds the highest loyalty level
+
+                let outputText = `Current loyalty sum: ${current_loyalty_sum}\n`;
+                outputText += `Current loyalty level: ${current_loyalty_level}\n`;
+
+                const targetType = document.getElementById('targetType').value;
+                const targetValue = parseInt(document.getElementById('targetValue').value);
+                let target_loyalty_sum, target_loyalty_level;
+
+                if (targetType === 'level') {
+                    target_loyalty_level = targetValue;
+                    target_loyalty_sum = loyalty[target_loyalty_level] - spec_loyalty;
+                } else if (targetType === 'increase') {
+                    const loyalty_delta = targetValue;
+                    target_loyalty_sum = current_loyalty_sum + loyalty_delta;
+                    target_loyalty_level = loyalty.findIndex(l => l >= target_loyalty_sum);
+
+                } else if (targetType === 'next') {
+                    target_loyalty_level = current_loyalty_level + 1;
+                    if (target_loyalty_level >= loyalty.length) {
+                        outputText += "Already at maximum level.\n";
+                        document.getElementById('output').textContent = outputText;
+                        return;
+                    }
+                    target_loyalty_sum = loyalty[target_loyalty_level] - spec_loyalty;
+                }
+                else{
+                      throw new Error("Invalid target type.");
+                }
+                if (target_loyalty_level >= loyalty.length) {
+                    outputText += "Target level exceeds maximum available level.\n";
+                    document.getElementById('output').textContent = outputText;
+                    return;
+                }
+
+                 if(target_loyalty_level < 0){
+                    outputText += "Target level can not be negative.\n";
+                    document.getElementById('output').textContent = outputText;
+                    return;
+                }
+
+                outputText += `Target loyalty level: ${target_loyalty_level}\n`;
+
+                let levels_goal = [...levels_current];
+                let rss_cumulate = 0;
+                let upgrade_no = 1;
+
+                while (levels_goal.reduce((a, b) => a + b, 0) < target_loyalty_sum) {
+                    let rss_array = [];
+                    for (let i = 0; i < 4; i++) {
+                        if (levels_goal[i] < 19) { // Changed to 19 because arrays are 0-indexed and there are 19 values
+                            rss_array.push(All_ACs[i][levels_goal[i]]);
+                        } else {
+                            rss_array.push(Infinity);
+                        }
+                    }
+
+                    if (rss_array.every(rss => rss === Infinity)) {
+                        outputText += "Cannot upgrade further. All ACs are at max level.\n";
+                        break;
+                    }
+
+                    let rss_min = Math.min(...rss_array);
+                    let rss_ac = rss_array.indexOf(rss_min);
+
+                    rss_cumulate += rss_min;
+
+                    if (levels_goal[rss_ac] < 19) {
+                        levels_goal[rss_ac] += 1;
+
+                        outputText += `Upgrade #${upgrade_no}: AC${rss_ac + 1}, needs ${rss_min.toLocaleString()}, cumulative: ${rss_cumulate.toLocaleString()}, AC levels after upgrade: ${levels_goal}\n`;
+                        upgrade_no += 1;
+                    }
+                }
+
+                outputText += `\nNo. upgrades: ${upgrade_no - 1}\nFinal levels: ${levels_goal}\nLoyalty from spec points: ${spec_loyalty}\nTotal loyalty: ${levels_goal.reduce((a, b) => a + b, 0) + spec_loyalty}\n`;
+
+                document.getElementById('output').textContent = outputText;
+
+            } catch (error) {
+                document.getElementById('output').textContent = "Error: " + error.message;
             }
         }
     </script>
+
 </body>
 </html>
